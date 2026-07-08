@@ -1,0 +1,9 @@
+.gradle/
+build/
+.intellijPlatform/
+libs/
+.idea/
+src/integrationTest/fixtures/project/node_modules/
+src/integrationTest/fixtures/project/haxe_libraries/
+src/integrationTest/fixtures/project/.haxerc
+local.properties

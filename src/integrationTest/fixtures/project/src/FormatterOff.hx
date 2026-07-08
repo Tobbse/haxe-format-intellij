@@ -1,0 +1,8 @@
+class FormatterOff {
+    // @formatter:off
+    static var matrix = [1,0,0,
+                         0,1,0,
+                         0,0,1];
+    // @formatter:on
+    public function new() {}
+}

@@ -1,0 +1,5 @@
+{
+    "excludes": ["src/excluded/.*"],
+    "indentation": { "character": "    " },
+    "lineEnds": { "leftCurly": "both" }
+}

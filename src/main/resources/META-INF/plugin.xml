@@ -1,0 +1,19 @@
+<idea-plugin>
+    <id>com.innogames.haxeformatter</id>
+    <name>Haxe Formatter (hxformat.json)</name>
+    <vendor>InnoGames</vendor>
+    <description><![CDATA[
+        Routes IntelliJ's Reformat Code action for Haxe (.hx) files through the real
+        haxe-formatter CLI (HaxeCheckstyle, hxformat.json), so IDE formatting is
+        byte-identical to VS Code and CI. macOS only.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <!-- Haxe Toolkit Support — the team's fork keeps this id (verified, Task 1) -->
+    <depends>com.intellij.plugins.haxe</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <formattingService implementation="com.innogames.haxeformatter.HaxeExternalFormattingService"/>
+        <notificationGroup id="Haxe Formatter" displayType="BALLOON"/>
+    </extensions>
+</idea-plugin>
