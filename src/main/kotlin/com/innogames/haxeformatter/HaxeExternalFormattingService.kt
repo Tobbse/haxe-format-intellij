@@ -37,7 +37,7 @@ class HaxeExternalFormattingService(
     override fun canFormat(file: PsiFile): Boolean =
         file.language.id == "Haxe" || file.name.endsWith(".hx", ignoreCase = true)
 
-    override fun getName(): String = "Haxe Formatter"
+    override fun getName(): String = ResultPolicy.NOTIFICATION_TITLE
 
     override fun getNotificationGroupId(): String = ResultPolicy.NOTIFICATION_TITLE
 
@@ -66,12 +66,12 @@ class HaxeExternalFormattingService(
         private val request: AsyncFormattingRequest,
         private val documentText: String,
         private val filePath: Path,
-    ) : Runnable {
+    ) {
         @Volatile private var process: FormatterProcess? = null
 
         @Volatile private var cancelled = false
 
-        override fun run() { // pooled background thread
+        fun run() { // pooled background thread
             try {
                 val context = resolver.resolve(filePath)
                 val command = FormatterCommandBuilder.build(context, filePath, baseEnvProvider())

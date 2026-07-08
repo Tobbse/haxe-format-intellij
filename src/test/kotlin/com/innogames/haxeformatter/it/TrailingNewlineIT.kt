@@ -1,5 +1,6 @@
 package com.innogames.haxeformatter.it
 
+import com.innogames.haxeformatter.ResultPolicy
 import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -19,7 +20,7 @@ class TrailingNewlineIT {
     @Test
     fun `no-change input comes back as input plus exactly one newline`() {
         val formatted = ItEnv.read(ItEnv.goldenDir.resolve("Unformatted.hx.golden"))
-            .let(com.innogames.haxeformatter.ResultPolicy::normaliseTrailingNewline)
+            .let(ResultPolicy::normaliseTrailingNewline)
         val result = ItEnv.run("src/Unformatted.hx", formatted)
         assertEquals(0, result.exitCode)
         assertEquals(formatted + "\n", result.stdout) // THE empirical claim from design §5.3

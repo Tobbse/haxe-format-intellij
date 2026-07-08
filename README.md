@@ -20,9 +20,11 @@ from the file being formatted. macOS only.
 ## Install
 
 1. **Custom plugin repository (recommended):** Settings → Plugins → ⚙ → Manage Plugin
-   Repositories → add `https://carostobbe.github.io/intellij-haxe/updatePlugins.xml`
-   (most team members already have it for the Haxe fork). Once this plugin's entry is
-   added there (see Publishing), it appears in Marketplace search and auto-updates.
+   Repositories → add `https://OWNER.github.io/haxe-format-intellij/updatePlugins.xml`
+   (published by this repo's CI on every release). The plugin then appears in
+   Marketplace search and auto-updates. Team setup automation can seed this URL into
+   `IntelliJIdea*/options/updates.xml` (`pluginHosts`) and prompt the install per
+   project via `.idea/externalDependencies.xml` (Required Plugins).
 2. **Fallback:** Settings → Plugins → ⚙ → Install Plugin from Disk… with the release
    zip from this repo's GitHub releases.
 
@@ -49,36 +51,32 @@ from the file being formatted. macOS only.
 
 ## Publishing a release (maintainers)
 
-1. Tag `vX.Y.Z` and push — CI (`.github/workflows/build.yml`) builds the plugin,
-   runs the tests and attaches `haxe-format-intellij-X.Y.Z.zip` to the GitHub release.
-2. **Manual step, outside this repo:** add/update this plugin's `<plugin>` entry in the
-   `carostobbe.github.io/intellij-haxe` repository's `updatePlugins.xml` (one custom
-   repository URL serves both plugins):
+1. Tag `vX.Y.Z` and push — CI (`.github/workflows/build.yml`) builds the plugin, runs
+   the tests, attaches `haxe-format-intellij-X.Y.Z.zip` to the GitHub release, **and
+   redeploys `updatePlugins.xml` to this repo's GitHub Pages** pointing at that release.
+   Nothing else to do — IDEs with the repository URL configured pick up the update.
+   (`workflow_dispatch` on the Build workflow re-publishes the XML without a new tag.)
 
-   ```xml
-   <plugin id="com.innogames.haxeformatter"
-           url="https://github.com/<org>/haxe-format-intellij/releases/download/vX.Y.Z/haxe-format-intellij-X.Y.Z.zip"
-           version="X.Y.Z">
-       <idea-version since-build="253" until-build="261.*"/>
-   </plugin>
-   ```
+   One-time repo setting: Settings → Pages → Source: **GitHub Actions**.
 
-   Keep `since-build`/`until-build` in lockstep with the intellij-haxe fork's range
-   whenever either is bumped.
+2. *(Optional alternative)* serve both plugins from the intellij-haxe fork's single
+   repository URL instead — see
+   [docs/publishing-updatePlugins.md](docs/publishing-updatePlugins.md).
 
-## Migration (FOE monorepo — applies outside this repo)
+## Migrating from a format-on-save File Watcher
 
-This plugin replaces the old "haxe format on save" **File Watcher** (which wrote to
-disk and raced the editor buffer under autosave):
+If your project previously ran the formatter through an IDE **File Watcher** (which
+writes to disk and races the editor buffer under autosave — the problem this plugin
+exists to fix):
 
-- **Remove** the "haxe format on save" File Watcher entry: delete/prune
-  `.idea/watcherTasks.xml` in the FOE project **and in every worktree**; also remove it
-  from any shared/template `.idea` config or setup automation that seeds it.
+- **Remove** the File Watcher entry: delete/prune `.idea/watcherTasks.xml` in the
+  project **and in every worktree**; also remove it from any shared/template `.idea`
+  config or setup automation that seeds it.
 - **Remove** any setup-flow/onboarding step that installs or configures that watcher.
-- **Keep** `scripts/frontend/format-haxe-on-save.sh` only if pre-commit/CI/docs still
-  call it; the plugin does not use it.
-- **Add** to onboarding: the plugin arrives via the already-configured custom plugin
-  repository (or manual zip install as fallback).
+- **Keep** any formatter wrapper script only if pre-commit/CI/docs still call it; the
+  plugin does not use one.
+- **Add** to onboarding: the plugin arrives via the custom plugin repository (or
+  manual zip install as fallback).
 - Optionally disable the bundled File Watchers plugin if nothing else uses it.
 
 ## Development

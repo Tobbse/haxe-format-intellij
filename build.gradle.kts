@@ -1,7 +1,6 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    id("java")
     kotlin("jvm") version "2.2.0" // any KGP compatible with Gradle 9
     id("org.jetbrains.intellij.platform") version "2.17.0" // floor: Gradle 9.0.0 (Task 2)
 }
@@ -28,8 +27,6 @@ dependencies {
         }
     }
     testImplementation("junit:junit:4.13.2")
-    // If platform tests fail with NoClassDefFoundError: org/opentest4j/..., add:
-    // testRuntimeOnly("org.opentest4j:opentest4j:1.3.0")
 }
 
 kotlin { jvmToolchain(21) } // build 253 (2025.3) requires Java 21 bytecode
@@ -46,8 +43,10 @@ intellijPlatform {
 }
 
 // Integration tests (Task 11) live in package ...haxeformatter.it and are opt-in:
+val itTestPattern = "com.innogames.haxeformatter.it.*"
+
 tasks.test {
-    filter { excludeTestsMatching("com.innogames.haxeformatter.it.*") }
+    filter { excludeTestsMatching(itTestPattern) }
 }
 
 // Plain-JUnit process tests against the real formatter; requires macOS + node + lix
@@ -59,7 +58,7 @@ val integrationTest by tasks.registering(Test::class) {
     // Reuse the platform-wired test classpath: sourceSets.test.runtimeClasspath alone lacks
     // the Kotlin stdlib + platform jars (the IntelliJ plugin only wires the built-in test task).
     classpath = tasks.test.get().classpath
-    filter { includeTestsMatching("com.innogames.haxeformatter.it.*") }
+    filter { includeTestsMatching(itTestPattern) }
     environment("HAXE_FORMATTER_IT", "1")
     outputs.upToDateWhen { false }
 }

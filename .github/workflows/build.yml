@@ -5,6 +5,12 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch: # re-publish updatePlugins.xml from the latest release, without tagging
+
+# Rapid pushes to the same ref supersede the running build (tag refs are unique, so releases are unaffected)
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -36,3 +42,63 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "$GITHUB_REF_NAME" build/distributions/*.zip --generate-notes
+
+  # Publishes https://<owner>.github.io/haxe-format-intellij/updatePlugins.xml pointing at the
+  # LATEST GitHub release. Runs after each tagged release, or manually via workflow_dispatch.
+  # One-time repo setting required: Settings → Pages → Source: "GitHub Actions".
+  publish-update-xml:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4 # for since/until extraction from build.gradle.kts
+
+      - name: Generate updatePlugins.xml from latest release
+        run: |
+          set -euo pipefail
+          rel=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest")
+          VERSION=$(jq -r '.tag_name | ltrimstr("v")' <<<"$rel")
+          ZIP_URL=$(jq -r '[.assets[] | select(.name | endswith(".zip"))][0].browser_download_url' <<<"$rel")
+          SINCE=$(sed -nE 's/.*sinceBuild = "([^"]+)".*/\1/p' build.gradle.kts)
+          UNTIL=$(sed -nE 's/.*untilBuild = "([^"]+)".*/\1/p' build.gradle.kts)
+          if [ -z "$VERSION" ] || [ "$ZIP_URL" = "null" ] || [ -z "$SINCE" ] || [ -z "$UNTIL" ]; then
+            echo "::error::Missing release data (version=$VERSION url=$ZIP_URL since=$SINCE until=$UNTIL)"
+            exit 1
+          fi
+          mkdir -p public
+          cat > public/updatePlugins.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <plugins>
+            <plugin
+              id="com.innogames.haxeformatter"
+              url="${ZIP_URL}"
+              version="${VERSION}">
+              <idea-version since-build="${SINCE}" until-build="${UNTIL}"/>
+              <name>Haxe Formatter (hxformat.json)</name>
+              <vendor>InnoGames</vendor>
+              <description><![CDATA[Reformat Code for .hx via haxe-formatter/hxformat.json — byte-identical to VS Code and CI.]]></description>
+            </plugin>
+          </plugins>
+          EOF
+          cat public/updatePlugins.xml
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

@@ -1638,10 +1638,10 @@ When the user pushes `main` and later a `v0.1.0` tag: Actions run must be green,
    </plugin>
    ```
    Keep since/until in lockstep with the intellij-haxe fork's range whenever either is bumped (D7).
-6. **MIGRATION (FOE monorepo — documentation only, applies outside this repo)** — per design §5.8:
-   - Remove the "haxe format on save" File Watcher: delete/prune `.idea/watcherTasks.xml` in the FOE project **and in every worktree**; remove it from any shared/template `.idea` config or setup automation that seeds it.
+6. **MIGRATION (adopting projects — documentation only, applies outside this repo)** — per design §5.8:
+   - Remove any format-on-save File Watcher: delete/prune `.idea/watcherTasks.xml` in the project **and in every worktree**; remove it from any shared/template `.idea` config or setup automation that seeds it.
    - Remove any setup-flow/onboarding step that installs that watcher.
-   - Keep `scripts/frontend/format-haxe-on-save.sh` only if pre-commit/CI/docs still call it; the plugin does not.
+   - Keep any formatter wrapper script only if pre-commit/CI/docs still call it; the plugin does not.
    - Add to onboarding: the plugin arrives via the already-configured custom repository (or manual zip install).
    - Optionally disable the bundled File Watchers plugin if nothing else uses it.
 7. **Development** — `./gradlew test` (unit + platform), `./gradlew integrationTest` (opt-in; macOS + node + lix; run `src/integrationTest/fixtures/setup.sh` first), `./gradlew runIde` (drop the fork zip into `libs/` first, see Task 9), `./gradlew buildPlugin`.
@@ -1654,10 +1654,10 @@ Proofread; confirm every claim matches the implemented behaviour (superpowers:ve
 
 ```bash
 git add README.md
-git commit -m "docs: usage, publishing (updatePlugins.xml entry), and FOE File Watcher migration"
+git commit -m "docs: usage, publishing (updatePlugins.xml entry), and File Watcher migration"
 ```
 
-**Success criteria:** README covers install, behaviour, publishing (incl. the manual updatePlugins.xml step marked as outside this repo), and the FOE migration checklist (documentation-only).
+**Success criteria:** README covers install, behaviour, publishing (incl. the manual updatePlugins.xml step marked as outside this repo), and the File Watcher migration checklist (documentation-only).
 
 ---
 
@@ -1706,7 +1706,7 @@ Expected: all IT tests green — goldens byte-match, idempotency holds, trailing
 - [ ] Integration suite green on a prepared macOS+node+lix machine; idempotency + trailing-newline empirically pinned (§7 items 2–3 closed).
 - [ ] Plugin zip produced; packaged plugin.xml carries the Haxe depends, formattingService, notificationGroup, since/until mirroring the fork (§7 item 1 closed in Task 1).
 - [ ] CI workflow committed; first tagged release attaches the zip (verified after the user pushes a tag).
-- [ ] README documents install, behaviour caveats, the manual updatePlugins.xml publishing step, and the FOE File Watcher migration (docs-only).
+- [ ] README documents install, behaviour caveats, the manual updatePlugins.xml publishing step, and the File Watcher migration (docs-only).
 - [ ] Manual smoke checklist executed and clean.
 
 **Step 6: Wrap up the branch/work**

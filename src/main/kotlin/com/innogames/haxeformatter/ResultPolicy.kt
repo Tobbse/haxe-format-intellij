@@ -13,6 +13,7 @@ sealed interface FormatOutcome {
  * that must leave the buffer untouched.
  */
 object ResultPolicy {
+    /** Also the service display name; must match the `notificationGroup` id in plugin.xml. */
     const val NOTIFICATION_TITLE = "Haxe Formatter"
 
     fun decide(input: String, result: FormatterResult): FormatOutcome = when (result.exitCode) {

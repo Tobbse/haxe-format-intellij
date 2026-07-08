@@ -1,6 +1,7 @@
 package com.innogames.haxeformatter
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.ProcessIOExecutorService
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CompletableFuture
 
@@ -21,11 +22,13 @@ class CliFormatterExecutor : FormatterExecutor {
         val process = commandLine.createProcess()
 
         // Drain stdout/stderr concurrently, then feed stdin — never deadlocks on pipe buffers.
-        val stdout = CompletableFuture.supplyAsync { process.inputStream.readBytes() }
-        val stderr = CompletableFuture.supplyAsync { process.errorStream.readBytes() }
-        val feeder = CompletableFuture.runAsync {
+        // Blocking pipe I/O belongs on the platform's process-I/O pool, not the common pool.
+        val io = ProcessIOExecutorService.INSTANCE
+        val stdout = CompletableFuture.supplyAsync({ process.inputStream.readBytes() }, io)
+        val stderr = CompletableFuture.supplyAsync({ process.errorStream.readBytes() }, io)
+        val feeder = CompletableFuture.runAsync({
             process.outputStream.use { it.write(stdin.toByteArray(StandardCharsets.UTF_8)) }
-        }
+        }, io)
 
         return object : FormatterProcess {
             override fun waitFor(): FormatterResult {

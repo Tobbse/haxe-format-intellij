@@ -19,29 +19,20 @@ data class FormatterContext(
 class FormatterContextResolver {
     private val cache = ConcurrentHashMap<Path, FormatterContext>()
 
-    fun resolve(filePath: Path): FormatterContext {
-        val dir = filePath.toAbsolutePath().parent ?: filePath.toAbsolutePath()
-        return cache.computeIfAbsent(dir, ::compute)
-    }
+    fun resolve(filePath: Path): FormatterContext =
+        cache.computeIfAbsent(cacheKey(filePath), ::compute)
 
     fun invalidate(filePath: Path) {
-        val dir = filePath.toAbsolutePath().parent ?: filePath.toAbsolutePath()
-        cache.remove(dir)
+        cache.remove(cacheKey(filePath))
     }
+
+    private fun cacheKey(filePath: Path): Path =
+        filePath.toAbsolutePath().let { it.parent ?: it }
 
     private fun compute(startDir: Path): FormatterContext {
-        val configRoot = findUp(startDir) { Files.isRegularFile(it.resolve("hxformat.json")) } ?: startDir
-        val nodeBin = findUp(startDir) { Files.isDirectory(it.resolve("node_modules").resolve(".bin")) }
-            ?.resolve("node_modules")?.resolve(".bin")
+        val ancestors = generateSequence(startDir) { it.parent }
+        val configRoot = ancestors.firstOrNull { Files.isRegularFile(it.resolve("hxformat.json")) } ?: startDir
+        val nodeBin = ancestors.map { it.resolve("node_modules").resolve(".bin") }.firstOrNull(Files::isDirectory)
         return FormatterContext(configRoot, nodeBin)
-    }
-
-    private fun findUp(from: Path, predicate: (Path) -> Boolean): Path? {
-        var dir: Path? = from
-        while (dir != null) {
-            if (predicate(dir)) return dir
-            dir = dir.parent
-        }
-        return null
     }
 }

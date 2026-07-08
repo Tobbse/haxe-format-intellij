@@ -1,7 +1,5 @@
 package com.innogames.haxeformatter.it
 
-import com.innogames.haxeformatter.CliFormatterExecutor
-import com.innogames.haxeformatter.FormatterCommand
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -19,14 +17,9 @@ class LibpathProbeIT {
 
     @Test
     fun `haxelib libpath formatter resolves under the lix shim`() {
-        val cmd = FormatterCommand(
-            argv = listOf("haxelib", "libpath", "formatter"),
-            workDir = ItEnv.fixtureRoot,
-            environment = System.getenv() + mapOf(
-                "PATH" to "${ItEnv.fixtureRoot.resolve("node_modules/.bin")}:${System.getenv("PATH")}",
-            ),
-        )
-        val result = CliFormatterExecutor().start(cmd, "").waitFor()
+        // Same env/cwd the plugin would use (production pipeline); only the argv differs.
+        val cmd = ItEnv.command("src/Unformatted.hx").copy(argv = listOf("haxelib", "libpath", "formatter"))
+        val result = ItEnv.executor.start(cmd, "").waitFor()
         assertEquals(0, result.exitCode)
         assertTrue(result.stdout.trim().isNotEmpty())
         // Record the resolved path in the task notes — input for the future fast path.

@@ -2,17 +2,17 @@ package com.innogames.haxeformatter
 
 import com.intellij.formatting.service.FormattingService
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.testFramework.ExtensionTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.ui.UIUtil
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class HaxeExternalFormattingServiceTest : BasePlatformTestCase() {
 
-    private val ep = ExtensionPointName.create<FormattingService>("com.intellij.formattingService")
     private lateinit var fake: FakeFormatterExecutor
 
     private fun install(result: FormatterResult): HaxeExternalFormattingService {
@@ -21,6 +21,7 @@ class HaxeExternalFormattingServiceTest : BasePlatformTestCase() {
             mapOf("PATH" to "/usr/bin:/bin")
         }
         // Ours first, then the existing services (CoreFormattingService stays as fallback).
+        val ep = FormattingService.EP_NAME
         ExtensionTestUtil.maskExtensions(ep, listOf(service) + ep.extensionList, testRootDisposable)
         return service
     }
@@ -112,7 +113,7 @@ class HaxeExternalFormattingServiceTest : BasePlatformTestCase() {
 
     fun `test cancel destroys the running process`() {
         val service = install(FormatterResult("", "", 0))
-        fake.blockUntil = java.util.concurrent.CountDownLatch(1)
+        fake.blockUntil = CountDownLatch(1)
         myFixture.configureByText("Foo.hx", "class Foo{}")
 
         val request = TestFormattingRequests.forFile(myFixture.file, myFixture.editor.document.text)
@@ -120,7 +121,7 @@ class HaxeExternalFormattingServiceTest : BasePlatformTestCase() {
         val task = service.createJob(request)!!
         val runner = kotlin.concurrent.thread { task.run() }
         // Let run() reach waitFor(), then cancel.
-        Thread.sleep(200)
+        assertTrue(fake.started.await(5, TimeUnit.SECONDS))
         assertTrue(task.cancel())
         runner.join(5_000)
         assertTrue(fake.destroyed)

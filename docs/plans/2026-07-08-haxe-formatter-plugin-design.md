@@ -12,7 +12,7 @@ Haxe (`.hx`) files by piping the **in-memory editor buffer** through the real fo
 configured via `hxformat.json`) — so IntelliJ output is byte-identical to VS Code and CI.
 
 The plugin is **generic**: it must work for any Haxe repository (lix or stock haxelib),
-not just the Forge of Empires monorepo. Platform scope: **macOS only** (matching current
+not just the originating project. Platform scope: **macOS only** (matching current
 tooling); nothing in the design is macOS-specific except the environment-capture layer,
 so other platforms remain a possible later extension.
 
@@ -34,7 +34,7 @@ so other platforms remain a possible later extension.
 | D1 | Extension point: `AsyncDocumentFormattingService` via `com.intellij.formattingService` | Confirmed by research |
 | D2 | Invocation: `--stdin` piped mode; buffer via STDIN, real file path via `-s` | Confirmed by research |
 | D3 | Platform scope: macOS only | User-confirmed |
-| D4 | Formatter discovery: plugin-native, generic per-project (no dependency on the FOE wrapper script) | User-confirmed ("must work for any Haxe repo") |
+| D4 | Formatter discovery: plugin-native, generic per-project (no dependency on any project-specific wrapper script) | User-confirmed ("must work for any Haxe repo") |
 | D5 | Distribution: custom plugin repository (`updatePlugins.xml` on GitHub Pages), same model as the team's intellij-haxe fork | User-confirmed |
 | D6 | Selection ⌘⌥L: **format the whole file anyway** (ignore the selection) | **ASSUMED** — recommended; alternatives in §5.5 |
 | D7 | Supported IDE range: **match the intellij-haxe fork's** since/until build range | **ASSUMED** — read from the fork's `updatePlugins.xml`/`plugin.xml` at implementation time |
@@ -229,9 +229,9 @@ directly — skips Neko entirely. Ship v1 with the plain `haxelib run` form; add
 direct-node fast path only if measured latency annoys (it's an explicit action; a few
 hundred ms is acceptable).
 
-The FOE monorepo's `scripts/frontend/format-haxe-on-save.sh` is **prior art, not a
-dependency** — the plugin re-implements its PATH insight generically (D4). The script
-can remain for CLI/CI use.
+The originating project's format-on-save wrapper script is **prior art, not a
+dependency** — the plugin re-implements its PATH insight generically (D4). Such a
+script can remain for CLI/CI use.
 
 ### 5.5 Range/selection formatting; whitespace-only; keep-line-breaks (Q5)
 
@@ -296,15 +296,14 @@ can remain for CLI/CI use.
 
 ### 5.8 Migration (Q8)
 
-Retire the format-on-save File Watcher (in the FOE monorepo, not this repo):
+Retire any pre-existing format-on-save File Watcher (in adopting projects, not this repo):
 
-- **Remove** the "haxe format on save" File Watcher entry → delete/prune
+- **Remove** the format-on-save File Watcher entry → delete/prune
   `.idea/watcherTasks.xml` (per project **and per worktree**; it's IDE-generated, also
   remove from any shared/template `.idea` config or setup automation that seeds it).
 - **Remove** any setup-flow step that installs/configures that watcher.
-- **Keep** `scripts/frontend/format-haxe-on-save.sh` only if something else (pre-commit,
-  CI, docs) still calls it; the plugin does not. Rename/retire at the monorepo owners'
-  discretion.
+- **Keep** any formatter wrapper script only if something else (pre-commit, CI, docs)
+  still calls it; the plugin does not. Rename/retire at the project owners' discretion.
 - **Add** to onboarding: install the plugin from the custom repository (or nothing, if
   it's added to the already-configured intellij-haxe repository XML — recommended).
 - Optionally disable the File Watchers bundled plugin if nothing else uses it.

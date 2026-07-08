@@ -2,6 +2,7 @@ package com.innogames.haxeformatter.it
 
 import com.innogames.haxeformatter.CliFormatterExecutor
 import com.innogames.haxeformatter.FormatOutcome
+import com.innogames.haxeformatter.FormatterCommand
 import com.innogames.haxeformatter.FormatterCommandBuilder
 import com.innogames.haxeformatter.FormatterContextResolver
 import com.innogames.haxeformatter.FormatterResult
@@ -22,12 +23,17 @@ object ItEnv {
         System.getenv("HAXE_FORMATTER_IT") == "1" &&
             Files.isExecutable(fixtureRoot.resolve("node_modules/.bin/haxelib"))
 
-    fun run(fileRelPath: String, stdin: String): FormatterResult {
+    val executor = CliFormatterExecutor()
+    private val resolver = FormatterContextResolver()
+
+    /** The exact command the plugin would build for this fixture file (production pipeline). */
+    fun command(fileRelPath: String): FormatterCommand {
         val file = fixtureRoot.resolve(fileRelPath)
-        val ctx = FormatterContextResolver().resolve(file)
-        val cmd = FormatterCommandBuilder.build(ctx, file, System.getenv())
-        return CliFormatterExecutor().start(cmd, stdin).waitFor()
+        return FormatterCommandBuilder.build(resolver.resolve(file), file, System.getenv())
     }
+
+    fun run(fileRelPath: String, stdin: String): FormatterResult =
+        executor.start(command(fileRelPath), stdin).waitFor()
 
     fun read(p: Path): String = Files.readString(p)
 }
