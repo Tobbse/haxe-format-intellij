@@ -49,13 +49,27 @@ class CliFormatterExecutorTest {
 
     @Test
     fun `destroy kills a hung process and waitFor returns promptly with non-zero exit`() {
-        val process = executor.start(cmd("/bin/sh", "-c", "sleep 30"), "")
+        // `sleep <marker> & wait` forces the shell to FORK a child on every platform (macOS
+        // bash would exec-replace itself for a plain command; Linux dash forks either way).
+        // destroy() must kill the whole tree: an orphaned child keeps the stdout/stderr pipe
+        // write-ends open — on Linux that blocks waitFor()'s stream reads until the orphan
+        // exits — and a cancelled format must not leave formatter processes running.
+        val marker = "30.417" // uniquely identifiable sleep duration for the orphan check
+        val process = executor.start(cmd("/bin/sh", "-c", "sleep $marker & wait"), "")
         thread { Thread.sleep(200); process.destroy() }
         val start = System.currentTimeMillis()
         val result = process.waitFor()
         assertTrue("waitFor took too long", System.currentTimeMillis() - start < 10_000)
         assertNotEquals(0, result.exitCode)
+
+        // The forked descendant must be dead too (allow the kernel a moment to reap it).
+        val deadline = System.currentTimeMillis() + 2_000
+        while (System.currentTimeMillis() < deadline && descendantAlive(marker)) Thread.sleep(50)
+        assertTrue("orphaned descendant survived destroy()", !descendantAlive(marker))
     }
+
+    private fun descendantAlive(marker: String): Boolean =
+        ProcessBuilder("pgrep", "-f", "sleep $marker").start().waitFor() == 0
 
     @Test
     fun `working directory is respected`() {

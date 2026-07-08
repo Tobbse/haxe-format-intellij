@@ -2,7 +2,7 @@
 
 > **Status: this repo now self-publishes.** The `publish-update-xml` job in
 > `.github/workflows/build.yml` deploys
-> `https://OWNER.github.io/haxe-format-intellij/updatePlugins.xml` on every release
+> `https://tobbse.github.io/haxe-format-intellij/updatePlugins.xml` on every release
 > tag (one-time repo setting: Settings → Pages → Source: "GitHub Actions"). Developers
 > add that URL once under Settings → Plugins → ⚙ → Manage Plugin Repositories (team
 > setup automation may seed it). The rest of this document is the **optional
@@ -56,7 +56,7 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     env:
       GH_TOKEN: ${{ github.token }}
-      FORMATTER_REPO: INNOGAMES_OWNER/haxe-format-intellij   # TODO: real owner/repo
+      FORMATTER_REPO: Tobbse/haxe-format-intellij
     steps:
       - name: Fetch latest releases of both plugins
         id: rel

@@ -20,7 +20,7 @@ from the file being formatted. macOS only.
 ## Install
 
 1. **Custom plugin repository (recommended):** Settings → Plugins → ⚙ → Manage Plugin
-   Repositories → add `https://OWNER.github.io/haxe-format-intellij/updatePlugins.xml`
+   Repositories → add `https://tobbse.github.io/haxe-format-intellij/updatePlugins.xml`
    (published by this repo's CI on every release). The plugin then appears in
    Marketplace search and auto-updates. Team setup automation can seed this URL into
    `IntelliJIdea*/options/updates.xml` (`pluginHosts`) and prompt the install per
