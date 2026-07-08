@@ -42,6 +42,12 @@ class CliFormatterExecutor : FormatterExecutor {
             }
 
             override fun destroy() {
+                // Kill the whole tree, not just the direct child: the formatter is a process
+                // chain (haxelib/lix shim → neko run.n → node run.js), and an orphaned
+                // descendant keeps the stdout/stderr pipe write-ends open — waitFor() would
+                // then block on the stream reads until the orphan exits. (Same reason the
+                // destroy test failed on Linux: dash forks for `sh -c`, unlike macOS bash.)
+                process.descendants().forEach { it.destroyForcibly() }
                 process.destroyForcibly()
             }
         }
